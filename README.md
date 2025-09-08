@@ -44,7 +44,7 @@ npm run dev
 
 # Run server
 php artisan serve
-
+```
 Then open http://127.0.0.1:8000 in your browser.
 
 Next Steps
