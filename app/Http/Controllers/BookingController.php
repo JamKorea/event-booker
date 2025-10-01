@@ -15,6 +15,22 @@ class BookingController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
+        // Respect active claim: only the claim holder can book during the window
+        $activeClaim = $event->waitlists()
+        ->whereNotNull('claim_expires_at')
+        ->where('claim_expires_at', '>', now())
+        ->orderBy('created_at')
+        ->first();
+
+        if ($activeClaim && $activeClaim->user_id !== auth()->id()) {
+            return redirect()->back()->with(
+                'error',
+                'A priority claim is active until ' .
+                $activeClaim->claim_expires_at->format('M d, Y h:i A') .
+                '. Only the notified user can book during this window.'
+            );
+        }
+
         // Capacity check
         if ($event->bookings()->count() >= $event->capacity) {
             return redirect()->back()->with('error', 'This event is already full.');
@@ -30,6 +46,9 @@ class BookingController extends Controller
             'event_id'    => $event->id,
             'attendee_id' => auth()->id(),
         ]);
+
+        // If this user was in waitlist, remove their waitlist entry
+        $event->waitlists()->where('user_id', auth()->id())->delete();
 
         return redirect()->route('events.show', $event)
                          ->with('success', 'You have successfully booked this event!');
@@ -50,12 +69,19 @@ class BookingController extends Controller
         // Delete booking
         $booking->delete();
 
-        // Excellence Marker: Notify first waitlist user if any exist
+        //Notify first waitlist user if any exist
         $nextWaitlist = $event->waitlists()->orderBy('created_at')->first();
 
         if ($nextWaitlist) {
+            // Assign a 2-hour claim window
+            $nextWaitlist->assignClaimWindow(120);
+
+            // Mark as notified
+            $nextWaitlist->markAsNotified();
+
+            // Send email with claim expiry
             Mail::to($nextWaitlist->user->email)->send(
-                new EventWaitlistNotification($event, $nextWaitlist->user)
+                new EventWaitlistNotification($event, $nextWaitlist->user, $nextWaitlist->claim_expires_at)
             );
 
             return redirect()->route('events.show', $event)

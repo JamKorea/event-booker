@@ -17,10 +17,13 @@
         <strong>Location:</strong> {{ $event->location ?? 'TBA' }}
     </p>
 
-    <p>
-        Please log in to your account as soon as possible if you’d like to claim this spot.
-        Availability is limited and may be taken quickly.
-    </p>
+    @if($claimExpiresAt)
+        <p>
+            Please note: You have until 
+            <strong>{{ $claimExpiresAt->format('M d, Y h:i A') }}</strong> 
+            to claim this spot. After that, your claim will expire and the next person on the waitlist will be notified.
+        </p>
+    @endif
 
     <p style="margin-top: 20px;">
         <a href="{{ url('/events/' . $event->id) }}" 
