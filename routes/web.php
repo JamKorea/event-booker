@@ -14,7 +14,7 @@ Route::get('/', function () {
 // All routes below require authentication
 Route::middleware(['auth'])->group(function () {
 
-    //Event routes
+    // Event routes
     // 1) Attendee & Organiser: can view events (index, show)
     Route::resource('events', EventController::class)->only(['index', 'show']);
 
@@ -32,15 +32,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/events/{event}/waitlist/leave', [WaitlistController::class, 'leave'])->name('waitlists.leave');
     Route::get('/my/waitlists', [WaitlistController::class, 'index'])->name('waitlists.index');
 
-    // Dashboard (accessible by ALL authenticated users)
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-
-    // Organiser-only reporting page
-    Route::get('/dashboard/report', [DashboardController::class, 'index'])
+    // Organiser-only dashboard (Raw SQL reports)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('organiser')
-        ->name('dashboard.report');
+        ->name('dashboard');
 
     // User profile management (from Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

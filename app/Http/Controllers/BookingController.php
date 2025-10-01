@@ -4,45 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Event;
-use Illuminate\Http\Request;
+use App\Models\Waitlist;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EventWaitlistNotification;
 
 class BookingController extends Controller
 {
-    /**
-     * Store a new booking (attendee joins an event).
-     *
-     * @param  int  $eventId
-     */
+    // Store a new booking (attendee joins an event)
     public function store($eventId)
     {
         $event = Event::findOrFail($eventId);
 
-        // 1. Capacity check
+        // Capacity check
         if ($event->bookings()->count() >= $event->capacity) {
             return redirect()->back()->with('error', 'This event is already full.');
         }
 
-        // 2. Prevent duplicate booking
+        // Prevent duplicate booking
         if ($event->bookings()->where('attendee_id', auth()->id())->exists()) {
             return redirect()->back()->with('error', 'You have already booked this event.');
         }
 
-        // 3. Create booking
+        // Create booking
         Booking::create([
             'event_id'    => $event->id,
             'attendee_id' => auth()->id(),
         ]);
 
-        return redirect()
-            ->route('events.show', $event)
-            ->with('success', 'You have successfully booked this event!');
+        return redirect()->route('events.show', $event)
+                         ->with('success', 'You have successfully booked this event!');
     }
 
-    /**
-     * Cancel an existing booking.
-     *
-     * @param  int  $eventId
-     */
+    // Cancel an existing booking
     public function destroy($eventId)
     {
         $event = Event::findOrFail($eventId);
@@ -57,8 +50,19 @@ class BookingController extends Controller
         // Delete booking
         $booking->delete();
 
-        return redirect()
-            ->route('events.show', $event)
-            ->with('success', 'Your booking has been cancelled.');
+        // Excellence Marker: Notify first waitlist user if any exist
+        $nextWaitlist = $event->waitlists()->orderBy('created_at')->first();
+
+        if ($nextWaitlist) {
+            Mail::to($nextWaitlist->user->email)->send(
+                new EventWaitlistNotification($event, $nextWaitlist->user)
+            );
+
+            return redirect()->route('events.show', $event)
+                             ->with('success', 'Your booking has been cancelled. The next waitlist user has been notified.');
+        }
+
+        return redirect()->route('events.show', $event)
+                         ->with('success', 'Your booking has been cancelled.');
     }
 }

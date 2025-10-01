@@ -28,7 +28,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+
+        if ($user->role === 'organiser') {
+            // Redirect organisers to the dashboard
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
+
+        // Default: attendees go to events page
+        return redirect()->intended(route('events.index', absolute: false));
     }
 
     /**
