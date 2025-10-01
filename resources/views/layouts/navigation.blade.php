@@ -12,15 +12,31 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <!-- Dashboard Link -->
+
+                    <!-- Dashboard (everyone, but we might later restrict content) -->
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
-                    <!-- Events Link -->
+                    <!-- Events (everyone can see) -->
                     <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.*')">
                         {{ __('Events') }}
                     </x-nav-link>
+
+                    <!-- Attendee only: My Waitlists -->
+                    @if(auth()->user()->role === 'attendee')
+                        <x-nav-link :href="route('waitlists.index')" :active="request()->routeIs('waitlists.index')">
+                            {{ __('My Waitlists') }}
+                        </x-nav-link>
+                    @endif
+
+                    <!-- Organiser only: Dashboard link (for reports) -->
+                    @if(auth()->user()->role === 'organiser')
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                            {{ __('Organiser Dashboard') }}
+                        </x-nav-link>
+                    @endif
+
                 </div>
             </div>
 

@@ -27,7 +27,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/events/{event}/book', [BookingController::class, 'store'])->name('bookings.store');
     Route::delete('/events/{event}/cancel', [BookingController::class, 'destroy'])->name('bookings.destroy');
 
-    // Waitlist routes (attendee: join/leave/list waitlists)
+    // Waitlist routes (attendee only)
     Route::post('/events/{event}/waitlist/join', [WaitlistController::class, 'join'])->name('waitlists.join');
     Route::delete('/events/{event}/waitlist/leave', [WaitlistController::class, 'leave'])->name('waitlists.leave');
     Route::get('/my/waitlists', [WaitlistController::class, 'index'])->name('waitlists.index');
